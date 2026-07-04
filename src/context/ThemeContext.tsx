@@ -21,6 +21,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Tailwind's darkMode:'class' reads the 'dark' class on the <html> element.
+    // We apply both classes to support both legacy body.light CSS and Tailwind dark mode.
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.toggle('light', theme === 'light');
     document.body.classList.toggle('light', theme === 'light');
     localStorage.setItem('nsl-theme', theme);
   }, [theme]);
