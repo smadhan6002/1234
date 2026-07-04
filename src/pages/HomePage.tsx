@@ -11,24 +11,38 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-function useReveal() {
+function useReveal(theme?: string) {
   useEffect(() => {
-    const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
-    const io = new IntersectionObserver(
-      entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            const el = e.target as HTMLElement;
-            setTimeout(() => el.classList.add('visible'), Number(el.dataset.delay || 0));
-            io.unobserve(el);
-          }
-        });
-      },
-      { threshold: 0.45 }
-    );
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, []);
+    // Small delay so the DOM has updated after theme re-render
+    const timer = setTimeout(() => {
+      const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+      const io = new IntersectionObserver(
+        entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              const el = e.target as HTMLElement;
+              setTimeout(() => el.classList.add('visible'), Number(el.dataset.delay || 0));
+              io.unobserve(el);
+            }
+          });
+        },
+        { threshold: 0.12 }
+      );
+      els.forEach(el => {
+        // If already scrolled past and the element is in the viewport area, make it visible immediately
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.classList.add('visible');
+        } else {
+          // Reset and re-observe so elements below the fold animate in when scrolled to
+          el.classList.remove('visible');
+          io.observe(el);
+        }
+      });
+      return () => io.disconnect();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [theme]);
 }
 
 const stats = [
@@ -42,7 +56,7 @@ const stats = [
 export default function HomePage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  useReveal();
+  useReveal(theme);
 
   const textPrimary = isDark ? 'text-white' : 'text-dark-bg';
   const textMuted = isDark ? 'text-white/50' : 'text-dark-bg/50';
