@@ -12,55 +12,43 @@ import { useTheme } from '../context/ThemeContext';
 import RegistrationModal from '../components/RegistrationModal';
 import { supabase } from '../lib/supabase';
 
-function useReveal() {
+function useReveal(theme?: string) {
 
 useEffect(() => {
 
-const els = document.querySelectorAll(
+  const timer = setTimeout(() => {
+    const els = document.querySelectorAll(
+      '.reveal,.reveal-left,.reveal-right'
+    );
+    const io = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const el = e.target as HTMLElement;
+            setTimeout(
+              () => el.classList.add('visible'),
+              Number(el.dataset.delay || 0)
+            );
+            io.unobserve(el);
+          }
+        });
+      },
+      { threshold: 0.08 }
+    );
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add('visible');
+      } else {
+        el.classList.remove('visible');
+        io.observe(el);
+      }
+    });
+    return () => io.disconnect();
+  }, 50);
+  return () => clearTimeout(timer);
 
-'.reveal,.reveal-left,.reveal-right'
-
-);
-
-const io = new IntersectionObserver(
-
-entries => {
-
-entries.forEach(e => {
-
-if (e.isIntersecting) {
-
-const el = e.target as HTMLElement;
-
-setTimeout(
-
-() => el.classList.add('visible'),
-
-Number(el.dataset.delay || 0)
-
-);
-
-io.unobserve(el);
-
-}
-
-});
-
-},
-
-{
-
-threshold:0.08
-
-}
-
-);
-
-els.forEach(el => io.observe(el));
-
-return ()=>io.disconnect();
-
-},[]);
+},[theme]);
 
 }
 
@@ -70,7 +58,7 @@ const { theme } = useTheme();
 
 const isDark = theme === 'dark';
 
-useReveal();
+useReveal(theme);
 
 const navigate = useNavigate();
 const [courses,setCourses]=useState<any[]>([]);
