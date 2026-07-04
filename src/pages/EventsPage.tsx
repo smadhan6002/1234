@@ -10,31 +10,42 @@ import RegistrationModal from '../components/RegistrationModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
-function useReveal() {
+function useReveal(theme?: string) {
   useEffect(() => {
-    const els = document.querySelectorAll('.reveal,.reveal-left,.reveal-right');
-    const io = new IntersectionObserver(
-      entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            const el = e.target as HTMLElement;
-            setTimeout(() => el.classList.add('visible'), Number(el.dataset.delay || 0));
-            io.unobserve(el);
-          }
-        });
-      },
-      { threshold: 0.08 }
-    );
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, []);
+    const timer = setTimeout(() => {
+      const els = document.querySelectorAll('.reveal,.reveal-left,.reveal-right');
+      const io = new IntersectionObserver(
+        entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              const el = e.target as HTMLElement;
+              setTimeout(() => el.classList.add('visible'), Number(el.dataset.delay || 0));
+              io.unobserve(el);
+            }
+          });
+        },
+        { threshold: 0.08 }
+      );
+      els.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.classList.add('visible');
+        } else {
+          el.classList.remove('visible');
+          io.observe(el);
+        }
+      });
+      return () => io.disconnect();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [theme]);
 }
 
 export default function EventsPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
-  useReveal();
+  useReveal(theme);
 
   const [events, setEvents] = useState<any[]>([]);
   const [modal, setModal] = useState<any>(null);
@@ -129,6 +140,7 @@ export default function EventsPage() {
               <EventCard
                 key={event.id}
                 event={event}
+                isDark={isDark}
                 textPrimary={textPrimary}
                 textMuted={textMuted}
                 setModal={setModal} navigate={navigate}
@@ -154,6 +166,7 @@ export default function EventsPage() {
               <EventCard
                 key={event.id}
                 event={event}
+                isDark={isDark}
                 textPrimary={textPrimary}
                 textMuted={textMuted}
                 setModal={setModal} navigate={navigate}
@@ -170,6 +183,7 @@ export default function EventsPage() {
                 <EventCard
                   key={event.id}
                   event={event}
+                  isDark={isDark}
                   textPrimary={textPrimary}
                   textMuted={textMuted}
                   setModal={setModal} navigate={navigate}
@@ -201,9 +215,9 @@ function SectionBanner({ isDark, title, subtitle, image, gradient, textPrimary, 
   );
 }
 
-function EventCard({ event, textPrimary, textMuted, setModal, navigate, isPast }: any) {
+function EventCard({ event, textPrimary, textMuted, setModal, navigate, isPast, isDark }: any) {
   return (
-    <div className="rounded-3xl border p-7">
+    <div className={`rounded-3xl border p-7 ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-light-border shadow-sm'}`}>
       <h3 className={`text-2xl font-display font-black mb-4 ${textPrimary}`}>
         {event.title}
       </h3>
